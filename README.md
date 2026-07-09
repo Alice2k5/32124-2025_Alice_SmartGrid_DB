@@ -2,7 +2,8 @@
 
 
 ## 📋 Course Details
-* **Course Code & Name:** DPR400210 – Database Programming
+* **Course Code:** DPR400210
+*  **Course Name:** Database Programming
 * **Academic Year:** 2025-2026
 * **Instructor:** Eric MANIRAGUHA
 * **Student Name:** Alice IRIMURITWE
