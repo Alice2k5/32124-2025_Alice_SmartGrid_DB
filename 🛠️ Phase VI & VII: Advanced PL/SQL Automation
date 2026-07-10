@@ -1,0 +1,40 @@
+CREATE OR REPLACE PACKAGE pkg_energy_billing AS
+    PROCEDURE generate_monthly_bill(p_meter_id IN NUMBER);
+END pkg_energy_billing;
+/
+
+
+CREATE OR REPLACE PACKAGE BODY pkg_energy_billing AS
+    PROCEDURE generate_monthly_bill(p_meter_id IN NUMBER) IS
+        v_total_kwh    NUMBER(10,2);
+        v_rate_per_kwh NUMBER(5,2) := 220.00; -- RWF flat rate per kWh for evaluation purposes
+        v_total_cost   NUMBER(12,2);
+        v_meter_exists NUMBER;
+    BEGIN
+        -- Verify meter exists
+        SELECT COUNT(*) INTO v_meter_exists FROM smart_meters WHERE meter_id = p_meter_id;
+        IF v_meter_exists = 0 THEN
+            RAISE_APPLICATION_ERROR(-20002, 'Error: Smart Meter ID does not exist.');
+        END IF;
+
+        -- Sum up unbilled consumption
+        SELECT NVL(SUM(kwh_consumed), 0)
+        INTO v_total_kwh
+        FROM consumption_logs
+        WHERE meter_id = p_meter_id;
+        
+        -- Business Logic: Calculate cost
+        v_total_cost := v_total_kwh * v_rate_per_kwh;
+        
+        -- Insert into billing table
+        INSERT INTO billing_records (meter_id, total_kwh, total_amount, due_date, payment_status)
+        VALUES (p_meter_id, v_total_kwh, v_total_cost, TRUNC(SYSDATE) + 14, 'UNPAID');
+        
+        DBMS_OUTPUT.PUT_LINE('Bill generated successfully for Meter ID: ' || p_meter_id || ' | Amount: ' || v_total_cost || ' RWF');
+    EXCEPTION
+        WHEN OTHERS THEN
+            DBMS_OUTPUT.PUT_LINE('Failed to generate bill: ' || SQLERRM);
+            ROLLBACK;
+    END generate_monthly_bill;
+END pkg_energy_billing;
+/
