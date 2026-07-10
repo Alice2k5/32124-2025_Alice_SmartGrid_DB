@@ -1,0 +1,61 @@
+-- 1. Create Lookup and Parent Tables
+CREATE TABLE grid_zones (
+    zone_id NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    zone_name VARCHAR2(100) NOT NULL UNIQUE,
+    region VARCHAR2(50) NOT NULL
+);
+
+CREATE TABLE customers (
+    customer_id NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    first_name VARCHAR2(50) NOT NULL,
+    last_name VARCHAR2(50) NOT NULL,
+    email VARCHAR2(100) UNIQUE,
+    phone VARCHAR2(15) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
+CREATE TABLE smart_meters (
+    meter_id NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    serial_number VARCHAR2(50) NOT NULL UNIQUE,
+    meter_status VARCHAR2(20) DEFAULT 'ACTIVE' CHECK (meter_status IN ('ACTIVE', 'SUSPENDED', 'MAINTENANCE')),
+    customer_id NUMBER,
+    zone_id NUMBER,
+    CONSTRAINT fk_meter_customer FOREIGN KEY (customer_id) REFERENCES customers(customer_id) ON DELETE SET NULL,
+    CONSTRAINT fk_meter_zone FOREIGN KEY (zone_id) REFERENCES grid_zones(zone_id)
+);
+
+
+-- 2. Create Core Transactional Tables
+CREATE TABLE consumption_logs (
+    log_id NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    meter_id NUMBER NOT NULL,
+    reading_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    kwh_consumed NUMBER(10,2) NOT NULL CHECK (kwh_consumed >= 0),
+    CONSTRAINT fk_log_meter FOREIGN KEY (meter_id) REFERENCES smart_meters(meter_id)
+);
+
+
+CREATE TABLE billing_records (
+    bill_id NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    meter_id NUMBER NOT NULL,
+    bill_date DATE DEFAULT TRUNC(SYSDATE),
+    total_kwh NUMBER(10,2) NOT NULL CHECK (total_kwh >= 0),
+    total_amount NUMBER(12,2) NOT NULL CHECK (total_amount >= 0),
+    due_date DATE NOT NULL,
+    payment_status VARCHAR2(20) DEFAULT 'UNPAID' CHECK (payment_status IN ('UNPAID', 'PAID', 'OVERDUE')),
+    CONSTRAINT fk_bill_meter FOREIGN KEY (meter_id) REFERENCES smart_meters(meter_id)
+);
+
+
+-- 3. Insert Base Reference Sample Data
+INSERT INTO grid_zones (zone_name, region) VALUES ('Nyarugenge Central Substation', 'Kigali City');
+INSERT INTO grid_zones (zone_name, region) VALUES ('Gasabo Remera Zone', 'Kigali City');
+
+INSERT INTO customers (first_name, last_name, email, phone) VALUES ('Jean', 'Mugisha', 'jean.m@example.rw', '+250788111222');
+INSERT INTO customers (first_name, last_name, email, phone) VALUES ('Marie', 'Uwase', 'marie.u@example.rw', '+250788333444');
+
+INSERT INTO smart_meters (serial_number, meter_status, customer_id, zone_id) VALUES ('SM-REG-2026-001', 'ACTIVE', 1, 1);
+INSERT INTO smart_meters (serial_number, meter_status, customer_id, zone_id) VALUES ('SM-REG-2026-002', 'ACTIVE', 2, 2);
+
+COMMIT;
