@@ -1,0 +1,11 @@
+To handle smart grid telemetry and digital billing safely, your database needs normalized tables. Here is the structure designed to meet Third Normal Form (3NF):
+1. Core Lookups & Infrastructure
+
+GRID_ZONES ($\underline{\text{Zone\_ID}}$, Zone_Name, Region) — Tracks substation coverage.
+CUSTOMERS($\underline{\text{Customer\_ID}}$, First_Name, Last_Name, Email, Phone, National_ID)
+SMART_METERS ($\underline{\text{Meter\_ID}}$, Serial_Number, Installation_Date, Meter_Status, Customer_ID, Zone_ID)
+
+2. Telemetry & Core Transactions
+
+CONSUMPTION_LOGS ($\underline{\text{Log\_ID}}$, Meter_ID, Reading_Timestamp, KWh_Consumed) — Captures real-time smart grid data.
+BILLING_RECORDS ($\underline{\text{Bill\_ID}}$, Meter_ID, Bill_Date, Total_KWh, Total_Amount, Due_Date, Payment_Status)
